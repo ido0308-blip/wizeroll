@@ -10,6 +10,8 @@
       min-height: 100vh;
       display: grid;
       place-content: center;
+      padding: 16px;
+      box-sizing: border-box;
       text-align: center;
       background: #FFFFFF;
       color: #111111;
@@ -17,10 +19,83 @@
     }
     h1 { margin: 0; font-size: 52px; font-weight: 900; }
     p { color: #6B7280; }
+    button {
+      padding: 12px 20px;
+      border: 0;
+      border-radius: 8px;
+      background: #111111;
+      color: #FFFFFF;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    ul { margin: 16px 0 0; padding: 0; list-style: none; text-align: left; overflow-wrap: anywhere; }
+    li { padding: 4px 0; }
   </style>
 </head>
 <body>
   <h1>WIZEROLL</h1>
   <p>Coming soon.</p>
+  <div>
+    <button id="check" type="button">Run system check</button>
+    <ul id="results" aria-live="polite"></ul>
+  </div>
+  <script>
+    const API_URL = 'https://wizeroll.vercel.app/api/advise';
+    const SUPABASE_URL = 'https://mmtfwmerqmkgliqlvyto.supabase.co';
+    const SUPABASE_PUBLIC_KEY = 'sb_publishable_50l0mjBPEBJ6acutZAtO5A_sgHcPWUX';
+
+    const results = document.getElementById('results');
+
+    function report(name, passed, detail) {
+      const item = document.createElement('li');
+      item.textContent = `${passed ? 'PASS' : 'FAIL'}: ${name} (${detail})`;
+      results.append(item);
+    }
+
+    async function checkFunction() {
+      const response = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      });
+      const data = await response.json();
+      report('Vercel function', data.ok === true, data.message || data.error);
+    }
+
+    function readTable(table) {
+      return fetch(`${SUPABASE_URL}/rest/v1/${table}?select=id`, {
+        headers: { apikey: SUPABASE_PUBLIC_KEY },
+      });
+    }
+
+    async function checkReadableTable(table, minRows) {
+      const response = await readTable(table);
+      const rows = response.ok ? await response.json() : [];
+      report(`Supabase ${table}`, rows.length >= minRows, `${rows.length} rows readable`);
+    }
+
+    async function checkRequestsIsPrivate() {
+      const response = await readTable('requests');
+      const rows = response.ok ? await response.json() : [];
+      report('Supabase requests', rows.length === 0, `${rows.length} rows readable, 0 expected`);
+    }
+
+    async function run(name, check) {
+      try {
+        await check();
+      } catch (error) {
+        report(name, false, error.message);
+      }
+    }
+
+    document.getElementById('check').addEventListener('click', async () => {
+      results.replaceChildren();
+      await run('Vercel function', checkFunction);
+      await run('Supabase product_specs', () => checkReadableTable('product_specs', 5));
+      await run('Supabase faults', () => checkReadableTable('faults', 10));
+      await run('Supabase requests', checkRequestsIsPrivate);
+    });
+  </script>
 </body>
 </html>
