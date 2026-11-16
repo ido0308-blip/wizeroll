@@ -9,6 +9,12 @@ export async function fetchProductSpecs() {
   return data;
 }
 
+export async function fetchFaults() {
+  const { data, error } = await db.from('faults').select('id, symptom, fix_instructions, self_fixable');
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // Anonymous customers can insert but not read, so the row is not returned.
 export async function saveRequest(request) {
   const { error } = await db.from('requests').insert(request);

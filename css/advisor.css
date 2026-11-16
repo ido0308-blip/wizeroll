@@ -134,6 +134,18 @@ body {
 
 .form-error:empty { display: none; }
 
+.form-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.skip-button[hidden] { display: none; }
+
+.form-actions:has(.skip-button[hidden]) {
+  grid-template-columns: 1fr;
+}
+
 .advisor-composer {
   width: 100%;
   max-width: 640px;

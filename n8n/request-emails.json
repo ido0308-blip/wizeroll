@@ -1,0 +1,56 @@
+{
+  "name": "WIZEROLL request emails",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wizeroll-requests",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "5f0c1a52-1d7e-4c51-9a4f-7d1d8f2b6a01",
+      "name": "Supabase insert",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wizeroll-requests"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Replace with your own addresses, in lower case. Never commit real addresses to the repo.\nconst TEST_ADDRESSES = ['replace-with-your-test-address@example.com'];\nconst OWNER_ADDRESS = 'replace-with-the-owner-test-address@example.com';\n\nconst VERDICT_LABELS = {\n  fit: 'Fits',\n  fit_with_reservation: 'Fits with a reservation',\n  not_fit: 'Does not fit',\n};\nconst CONFIDENCE_LABELS = {\n  high: 'identified',\n  low: 'a likely guess',\n  not_identified: 'not identified',\n};\nconst FOOTER = 'WIZEROLL demo. This email was sent to a test address.';\n\nconst body = $input.first().json.body ?? {};\nconst record = body.record ?? {};\nif (body.type !== 'INSERT' || body.table !== 'requests') return [];\n\nconst email = String(record.customer_email ?? '').trim().toLowerCase();\nconst log = Array.isArray(record.conversation_log) ? record.conversation_log : [];\nconst emails = [];\n\nif (record.request_type === 'fit_check' && TEST_ADDRESSES.includes(email)) {\n  const verdictEntry = [...log].reverse().find((entry) => entry.kind === 'verdict');\n  const verdict = VERDICT_LABELS[record.verdict] ?? 'Your result';\n  emails.push({\n    to: email,\n    subject: `WIZEROLL fit check: ${verdict}`,\n    text: [\n      'Hi,', '',\n      `Here is your WIZEROLL fit check result: ${verdict}.`, '',\n      String(verdictEntry?.text ?? ''), '',\n      record.wants_order ? 'We noted that you want to order. Your request was passed to the business owner.' : '',\n      '', FOOTER,\n    ].join('\\n'),\n  });\n}\n\n// Only open service requests are sent. A request saved as solved needs no follow-up.\nif (record.request_type === 'service' && record.status === 'pending') {\n  if (TEST_ADDRESSES.includes(email)) {\n    emails.push({\n      to: email,\n      subject: 'WIZEROLL service request received',\n      text: ['Hi,', '', 'Your service request was passed to the business owner and is waiting to be handled.', '', FOOTER].join('\\n'),\n    });\n  }\n  const firstMessage = log.find((entry) => entry.role === 'customer')?.text ?? '';\n  const conversation = log.map((entry) => `${entry.role === 'customer' ? 'Customer' : 'Advisor'}: ${entry.text}`).join('\\n');\n  emails.push({\n    to: OWNER_ADDRESS,\n    subject: 'WIZEROLL: new service request waiting',\n    text: [\n      'A new service request is waiting to be handled.', '',\n      `Customer: ${email}`,\n      `Fault: ${CONFIDENCE_LABELS[record.fault_match_confidence] ?? 'unknown'}`,\n      `First message: ${firstMessage}`, '',\n      'Conversation:', conversation, '',\n      FOOTER,\n    ].join('\\n'),\n  });\n}\n\nreturn emails.map((json) => ({ json }));"
+      },
+      "id": "5f0c1a52-1d7e-4c51-9a4f-7d1d8f2b6a02",
+      "name": "Build emails",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "5f0c1a52-1d7e-4c51-9a4f-7d1d8f2b6a03",
+      "name": "Send with Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [520, 0]
+    }
+  ],
+  "connections": {
+    "Supabase insert": {
+      "main": [[{ "node": "Build emails", "type": "main", "index": 0 }]]
+    },
+    "Build emails": {
+      "main": [[{ "node": "Send with Gmail", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

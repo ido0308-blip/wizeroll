@@ -10,11 +10,27 @@ import {
   saysNoneOfThem,
   withNoDataNotice,
 } from './fit-check.js';
+import {
+  buildServiceRequest,
+  clarifyingQuestion,
+  decideServiceStep,
+  fixMessage,
+  saysNotSolved,
+  saysSolved,
+} from './service-flow.js';
 import { callAdvisor, takeDraft } from './shared.js';
-import { fetchProductSpecs, saveRequest } from './supabase-client.js';
+import { fetchFaults, fetchProductSpecs, saveRequest } from './supabase-client.js';
 
 const GREETING = 'Hi! I can check whether the stool fits your workstation. Tell me in your own words: how high is your desk, how tall are you, how much do you weigh, how many hours a day do you sit, what floor is under the stool, and how do you usually sit?';
-const SERVICE_NOTICE = 'Help with a fault is not available here yet. It is coming soon.';
+const SERVICE_GREETING = 'Sorry to hear something is wrong with your stool. Tell me in your own words what happens.';
+const SOLVED_QUESTION = 'Did that solve it?';
+const SOLVED_REPEAT = 'Please tell me: did that solve it, yes or no?';
+const NOT_IDENTIFIED = 'I couldn\'t match this to a fault I know, so I won\'t guess. I\'ll pass it to the business owner.';
+const NOT_SOLVED = 'Sorry that didn\'t help. I\'ll pass it to the business owner.';
+const ASK_SERVICE_EMAIL = 'Leave your email and I\'ll open a service request.';
+const ASK_SOLVED_EMAIL = 'Glad it\'s solved! If you leave your email, I\'ll save this as solved. You can also skip.';
+const SERVICE_PENDING = 'Your request was passed to the business owner and is waiting to be handled.';
+const SERVICE_RESOLVED = 'Your request is saved as solved.';
 const LOAD_ERROR = 'I can\'t reach the product data right now. Please reload the page in a moment.';
 const ADVISOR_ERROR = 'Sorry, I couldn\'t process that. Your message is back in the box, please try sending it again.';
 const INTENT_QUESTION = 'Is this before you buy, or after you bought the stool?';
@@ -46,6 +62,9 @@ const clarifiedFields = new Set();
 const askedFields = new Set();
 const rejectedValues = new Map();
 let specs = [];
+let faults = [];
+let serviceClarified = false;
+let serviceDecision = null;
 let mode = 'loading';
 let hasFirstMessage = false;
 let pendingSpec = null;
@@ -93,11 +112,22 @@ function closeComposer() {
   form.hidden = true;
 }
 
-function askForIntent(text) {
-  say(text);
+// After a failed model call, the customer's last message goes back into the box.
+function restoreLastMessage() {
+  const lastEntry = conversation.at(-1);
+  if (lastEntry?.role === 'customer') {
+    conversation.pop();
+    [...log.querySelectorAll('.bubble-customer')].at(-1)?.remove();
+    input.value = lastEntry.text;
+  }
+  showNote(ADVISOR_ERROR);
+  setBusy(false);
+}
+
+function appendChoices(options) {
   const choices = document.createElement('div');
   choices.className = 'choices';
-  for (const [label, handler] of [['Before I buy', chooseBeforePurchase], ['After I bought it', chooseAfterPurchase]]) {
+  for (const [label, handler] of options) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'button button-secondary';
@@ -114,6 +144,11 @@ function askForIntent(text) {
   scrollToEnd();
 }
 
+function askForIntent(text) {
+  say(text);
+  appendChoices([['Before I buy', chooseBeforePurchase], ['After I bought it', chooseAfterPurchase]]);
+}
+
 function chooseBeforePurchase() {
   mode = 'fit';
   if (hasFirstMessage) handleFitMessage();
@@ -121,9 +156,9 @@ function chooseBeforePurchase() {
 }
 
 function chooseAfterPurchase() {
-  mode = 'closed';
-  showNote(SERVICE_NOTICE);
-  closeComposer();
+  mode = 'service';
+  if (hasFirstMessage) classifyFault();
+  else say(SERVICE_GREETING);
 }
 
 function handleIntentAnswer(text) {
@@ -159,7 +194,7 @@ function mergeExtracted(extracted) {
   }
 }
 
-function clarifyingQuestion(spec) {
+function categoryQuestion(spec) {
   return `I didn't find "${values[spec.field_key]}" in the product data. Which of these is closest: ${spec.allowed_values.join(', ')}? If none of them, just tell me that.`;
 }
 
@@ -187,7 +222,7 @@ function nextQuestion() {
     if (unclear && !clarifiedFields.has(spec.field_key)) {
       clarifiedFields.add(spec.field_key);
       pendingSpec = spec;
-      return clarifyingQuestion(spec);
+      return categoryQuestion(spec);
     }
   }
   return null;
@@ -238,14 +273,7 @@ async function handleFitMessage() {
     await continueFitCheck();
   } catch {
     typing.remove();
-    const lastEntry = conversation.at(-1);
-    if (lastEntry?.role === 'customer') {
-      conversation.pop();
-      [...log.querySelectorAll('.bubble-customer')].at(-1)?.remove();
-      input.value = lastEntry.text;
-    }
-    showNote(ADVISOR_ERROR);
-    setBusy(false);
+    restoreLastMessage();
   }
 }
 
@@ -329,6 +357,121 @@ function appendEmailForm(decision) {
   scrollToEnd();
 }
 
+// Service path: the model only sees ids and symptoms. Fixes and self_fixable come from the table.
+async function classifyFault() {
+  setBusy(true);
+  const typing = showTyping();
+  try {
+    const result = await callAdvisor('classify', {
+      text: conversation
+        .map((entry) => `${entry.role === 'customer' ? 'Customer' : 'Advisor'}: ${entry.text}`)
+        .join('\n'),
+      faults: faults.map(({ id, symptom }) => ({ id, symptom })),
+    });
+    typing.remove();
+    handleClassification(result);
+  } catch {
+    typing.remove();
+    restoreLastMessage();
+  }
+}
+
+function handleClassification(result) {
+  const decision = decideServiceStep(result, faults, { clarified: serviceClarified });
+  serviceDecision = decision;
+
+  if (decision.step === 'clarify') {
+    serviceClarified = true;
+    say(clarifyingQuestion(result));
+    setBusy(false);
+  } else if (decision.step === 'fix') {
+    say(fixMessage(decision));
+    askIfSolved();
+  } else if (decision.step === 'escalate') {
+    say(fixMessage(decision));
+    openServiceRequest();
+  } else {
+    say(NOT_IDENTIFIED);
+    openServiceRequest();
+  }
+}
+
+function askIfSolved() {
+  mode = 'solved_question';
+  say(SOLVED_QUESTION);
+  appendChoices([['Yes, it\'s solved', () => answerSolved(true)], ['No, it isn\'t', () => answerSolved(false)]]);
+  setBusy(false);
+}
+
+function handleSolvedAnswer(text) {
+  if (saysSolved(text)) return answerSolved(true);
+  if (saysNotSolved(text)) return answerSolved(false);
+  return say(SOLVED_REPEAT);
+}
+
+function answerSolved(solved) {
+  document.querySelector('.choices')?.remove();
+  mode = 'closed';
+  closeComposer();
+  if (solved) {
+    say(ASK_SOLVED_EMAIL);
+    appendServiceEmailForm({ solved: true });
+  } else {
+    say(NOT_SOLVED);
+    openServiceRequest();
+  }
+}
+
+function openServiceRequest() {
+  mode = 'closed';
+  closeComposer();
+  say(ASK_SERVICE_EMAIL);
+  appendServiceEmailForm({ solved: false });
+}
+
+function appendServiceEmailForm({ solved }) {
+  const template = document.getElementById('service-email-form-template');
+  const emailForm = template.content.firstElementChild.cloneNode(true);
+  const error = emailForm.querySelector('.form-error');
+  const submit = emailForm.querySelector('button[type="submit"]');
+  const skip = emailForm.querySelector('.skip-button');
+  const closingText = solved ? SERVICE_RESOLVED : SERVICE_PENDING;
+
+  if (solved) {
+    skip.hidden = false;
+    skip.addEventListener('click', () => {
+      emailForm.remove();
+      showNote('No problem. Nothing was saved.');
+    });
+  }
+
+  emailForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!emailForm.reportValidity()) return;
+    error.textContent = '';
+    submit.disabled = true;
+
+    const closingEntry = { role: 'advisor', text: closingText, at: new Date().toISOString() };
+    try {
+      await saveRequest(buildServiceRequest({
+        email: new FormData(emailForm).get('email').trim(),
+        conversation: [...conversation, closingEntry],
+        decision: serviceDecision,
+        solved,
+      }));
+      emailForm.remove();
+      conversation.push(closingEntry);
+      appendBubble('advisor', closingText);
+    } catch {
+      error.textContent = 'I couldn\'t save your request. Please try again.';
+      submit.disabled = false;
+    }
+  });
+
+  log.append(emailForm);
+  scrollToEnd();
+}
+
 form.addEventListener('submit', (event) => {
   event.preventDefault();
   const text = input.value.trim();
@@ -339,21 +482,19 @@ form.addEventListener('submit', (event) => {
   appendBubble('customer', text);
 
   if (mode === 'intent') handleIntentAnswer(text);
+  else if (mode === 'service') classifyFault();
+  else if (mode === 'solved_question') handleSolvedAnswer(text);
   else handleFitMessage();
 });
 
 async function start() {
   const path = new URLSearchParams(window.location.search).get('path');
-  if (path === 'service') {
-    mode = 'closed';
-    showNote(SERVICE_NOTICE);
-    closeComposer();
-    return;
-  }
 
   setBusy(true);
   try {
-    specs = orderSpecs(await fetchProductSpecs());
+    const [loadedSpecs, loadedFaults] = await Promise.all([fetchProductSpecs(), fetchFaults()]);
+    specs = orderSpecs(loadedSpecs);
+    faults = loadedFaults;
   } catch {
     showNote(LOAD_ERROR);
     return;
@@ -364,6 +505,9 @@ async function start() {
   if (path === 'fit') {
     mode = 'fit';
     say(GREETING);
+  } else if (path === 'service') {
+    mode = 'service';
+    say(SERVICE_GREETING);
   } else if (draft) {
     mode = 'intent';
     hasFirstMessage = true;

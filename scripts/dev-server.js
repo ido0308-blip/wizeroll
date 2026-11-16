@@ -6,7 +6,7 @@ import { createServer } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
 import handler from '../api/advise.js';
 
-const PORT = 8000;
+const PORT = Number(process.env.PORT) || 8000;
 const ROOT = resolve('.');
 const CONTENT_TYPES = {
   '.html': 'text/html; charset=utf-8',

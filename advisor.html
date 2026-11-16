@@ -44,6 +44,21 @@
     </form>
   </template>
 
+  <template id="service-email-form-template">
+    <form class="email-form" novalidate>
+      <label>
+        Email
+        <input name="email" type="email" required autocomplete="email" placeholder="name@example.com">
+      </label>
+      <p class="form-note">Demo: email goes only to approved test addresses.</p>
+      <p class="form-error" role="alert"></p>
+      <div class="form-actions">
+        <button class="button button-primary" type="submit">Send</button>
+        <button class="button button-secondary skip-button" type="button" hidden>Skip</button>
+      </div>
+    </form>
+  </template>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
   <script type="module" src="js/advisor.js"></script>
 </body>
