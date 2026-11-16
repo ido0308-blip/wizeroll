@@ -3,6 +3,7 @@ import {
   decideVerdict,
   fallbackReply,
   fillLabel,
+  isPlausible,
   matchAllowedValue,
   orderSpecs,
   parseSimpleAnswer,
@@ -42,6 +43,7 @@ const conversation = [];
 const values = {};
 const clarifiedFields = new Set();
 const askedFields = new Set();
+const rejectedValues = new Map();
 let specs = [];
 let mode = 'loading';
 let hasFirstMessage = false;
@@ -135,13 +137,21 @@ function conversationAsText() {
     .join('\n');
 }
 
+// An impossible number, such as a height of 1.7 cm, is asked again instead of judged.
+function acceptValue(spec, value) {
+  if (spec.value_type === 'numeric_range' && !isPlausible(spec.field_key, value)) {
+    delete values[spec.field_key];
+    rejectedValues.set(spec.field_key, value);
+    return;
+  }
+  values[spec.field_key] = spec.value_type === 'categorical'
+    ? matchAllowedValue(spec, value) ?? value
+    : value;
+}
+
 function mergeExtracted(extracted) {
   for (const spec of specs) {
-    if (!(spec.field_key in extracted)) continue;
-    const value = extracted[spec.field_key];
-    values[spec.field_key] = spec.value_type === 'categorical'
-      ? matchAllowedValue(spec, value) ?? value
-      : value;
+    if (spec.field_key in extracted) acceptValue(spec, extracted[spec.field_key]);
   }
 }
 
@@ -157,6 +167,12 @@ function nextQuestion() {
     if (value === undefined) {
       pendingSpec = spec;
       const question = QUESTIONS[spec.field_key] ?? `Please tell me about this: ${fillLabel(spec)}`;
+      if (rejectedValues.has(spec.field_key)) {
+        const rejected = rejectedValues.get(spec.field_key);
+        rejectedValues.delete(spec.field_key);
+        askedFields.add(spec.field_key);
+        return `${rejected} doesn't look right for this, so I won't use it. ${question}`;
+      }
       if (askedFields.has(spec.field_key)) {
         return `I can't check the fit without this, and I won't guess it. ${question}`;
       }
@@ -181,7 +197,7 @@ function answerPendingQuestion(text) {
 
   const value = parseSimpleAnswer(pendingSpec, text);
   if (value === null) return false;
-  values[key] = value;
+  acceptValue(pendingSpec, value);
   return true;
 }
 

@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildChecks, compareField, decideVerdict, fallbackReply, fillLabel, matchAllowedValue, parseSimpleAnswer, saysNoneOfThem } from '../js/fit-check.js';
+import { buildChecks, compareField, decideVerdict, fallbackReply, fillLabel, isPlausible, matchAllowedValue, parseSimpleAnswer, saysNoneOfThem } from '../js/fit-check.js';
 
 const DESK = { field_key: 'desk_height_cm', value_type: 'numeric_range', min_value: 70, max_value: 95, allowed_values: null, customer_label_template: 'Fits a desk height of {min} to {max} cm [demo value]' };
 const WEIGHT = { field_key: 'customer_weight_kg', value_type: 'numeric_range', min_value: 40, max_value: 130, allowed_values: null, customer_label_template: 'Supports {min} to {max} kg' };
@@ -23,6 +23,18 @@ test('plain numeric answers are read without the model', () => {
   assert.equal(parseSimpleAnswer(WEIGHT, '165 pounds'), 74.8);
   assert.equal(parseSimpleAnswer(HOURS, 'around 6 hours'), 6);
   assert.equal(parseSimpleAnswer(HOURS, '8 hours a day'), 8);
+});
+
+test('a length under 3 with no unit is read as meters', () => {
+  assert.equal(parseSimpleAnswer(DESK, '1.70'), 170);
+  assert.equal(parseSimpleAnswer(DESK, '1.7 cm'), 1.7);
+});
+
+test('impossible values are not plausible', () => {
+  assert.equal(isPlausible('customer_height_cm', 1.7), false);
+  assert.equal(isPlausible('customer_height_cm', 175), true);
+  assert.equal(isPlausible('daily_sitting_hours', 30), false);
+  assert.equal(isPlausible('floor_type', 'tile'), true);
 });
 
 test('unclear answers go to the model', () => {

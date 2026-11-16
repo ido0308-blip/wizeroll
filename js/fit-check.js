@@ -21,6 +21,17 @@ const SIMPLE_NUMBER = /^(?:(?:about|around|approximately|roughly|maybe)\s+|~\s*)
 const FEET_AND_INCHES = /^(\d+)\s*(?:'|ft|foot|feet)\s*(?:(\d+(?:\.\d+)?)\s*(?:"|in|inch|inches)?)?$/;
 const NONE_OF_THEM = /^(?:none(?: of (?:them|these|those|the above))?|neither|other|something else)$/;
 
+// A length under 3 with no unit is in meters: nobody has a desk or a height of 1.7 cm.
+const METERS_WITHOUT_UNIT_BELOW = 3;
+
+// Values no real workstation has. The advisor asks again instead of judging them.
+const PLAUSIBLE_RANGES = {
+  desk_height_cm: [40, 150],
+  customer_height_cm: [100, 230],
+  customer_weight_kg: [25, 300],
+  daily_sitting_hours: [0, 24],
+};
+
 function normalize(text) {
   return String(text).toLowerCase().replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -72,8 +83,16 @@ export function parseSimpleAnswer(spec, text) {
   }
 
   const simple = answer.match(SIMPLE_NUMBER);
-  const factor = simple ? UNITS_BY_FIELD_SUFFIX[suffix][simple[2]] : undefined;
-  return factor === undefined ? null : roundToTenth(Number(simple[1]) * factor);
+  if (!simple) return null;
+  const number = Number(simple[1]);
+  const inMeters = suffix === '_cm' && simple[2] === '' && number < METERS_WITHOUT_UNIT_BELOW;
+  const factor = inMeters ? 100 : UNITS_BY_FIELD_SUFFIX[suffix][simple[2]];
+  return factor === undefined ? null : roundToTenth(number * factor);
+}
+
+export function isPlausible(fieldKey, value) {
+  const range = PLAUSIBLE_RANGES[fieldKey];
+  return !range || (value >= range[0] && value <= range[1]);
 }
 
 export function saysNoneOfThem(text) {

@@ -35,7 +35,8 @@ Rules you must always follow:
 Writing:
 - Plain English in complete sentences, addressed to the customer as "you", at most 4 short sentences.
 - The first sentence states the verdict: "The stool fits your setup." for fit, "The stool fits your setup with a reservation." for fit_with_reservation, "The stool does not fit your setup." for not_fit.
-- Name the deciding field, its supported value from the label and the value the customer gave.
+- Name the deciding field in plain words, its supported value from the label and the value the customer gave, with its unit.
+- Never show a field_key such as customer_height_cm to the customer.
 - Leave out a demo marker or any field you were not given.`;
 
 function send(res, status, body) {
@@ -46,9 +47,11 @@ function cleanText(value, maxLength) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 }
 
-function toCanonicalNumber(number, unit) {
+// A length under 3 with no unit is in meters: nobody has a desk or a height of 1.7 cm.
+function toCanonicalNumber(number, unit, fieldKey) {
   if (typeof number !== 'number' || !Number.isFinite(number)) return null;
-  const factor = UNIT_FACTORS[unit] ?? 1;
+  const inMeters = !unit && fieldKey.endsWith('_cm') && number < 3;
+  const factor = inMeters ? 100 : UNIT_FACTORS[unit] ?? 1;
   return Math.round(number * factor * 10) / 10;
 }
 
@@ -104,7 +107,7 @@ function readExtractResult(output, fields) {
     const field = fields.find((candidate) => candidate.field_key === item?.field_key);
     if (!field) continue;
     const value = field.value_type === 'numeric_range'
-      ? toCanonicalNumber(item.number, item.unit)
+      ? toCanonicalNumber(item.number, item.unit, field.field_key)
       : cleanText(item.text, MAX_FIELD_TEXT_LENGTH).toLowerCase();
     if (value !== null && value !== '') extracted[field.field_key] = value;
   }
