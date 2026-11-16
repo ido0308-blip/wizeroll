@@ -48,6 +48,7 @@ let specs = [];
 let mode = 'loading';
 let hasFirstMessage = false;
 let pendingSpec = null;
+let readUpTo = 0;
 
 function scrollToEnd() {
   log.scrollTop = log.scrollHeight;
@@ -131,8 +132,11 @@ function handleIntentAnswer(text) {
   return askForIntent(INTENT_REPEAT);
 }
 
-function conversationAsText() {
+// Only messages the advisor has not read yet, with the question they answer, so the model
+// never re-reads an earlier answer and overwrites a value already settled.
+function unreadConversationAsText() {
   return conversation
+    .slice(readUpTo)
     .map((entry) => `${entry.role === 'customer' ? 'Customer' : 'Advisor'}: ${entry.text}`)
     .join('\n');
 }
@@ -140,8 +144,7 @@ function conversationAsText() {
 // An impossible number, such as a height of 1.7 cm, is asked again instead of judged.
 function acceptValue(spec, value) {
   if (spec.value_type === 'numeric_range' && !isPlausible(spec.field_key, value)) {
-    delete values[spec.field_key];
-    rejectedValues.set(spec.field_key, value);
+    if (values[spec.field_key] === undefined) rejectedValues.set(spec.field_key, value);
     return;
   }
   values[spec.field_key] = spec.value_type === 'categorical'
@@ -202,6 +205,7 @@ function answerPendingQuestion(text) {
 }
 
 async function continueFitCheck() {
+  readUpTo = conversation.length;
   const question = nextQuestion();
   if (question) {
     say(question);
@@ -221,7 +225,7 @@ async function handleFitMessage() {
   const typing = showTyping();
   try {
     const { extracted } = await callAdvisor('extract', {
-      text: conversationAsText(),
+      text: unreadConversationAsText(),
       fields: specs.map((spec) => ({
         field_key: spec.field_key,
         label: spec.customer_label_template,
