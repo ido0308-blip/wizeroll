@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Talk to the advisor | WIZEROLL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700;900&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/advisor.css">
+</head>
+<body>
+  <header class="advisor-header">
+    <a class="back-link" href="index.html" aria-label="Back to the product page">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>
+    </a>
+    <h1>Talk to the advisor</h1>
+  </header>
+
+  <main id="log" class="log" aria-live="polite"></main>
+
+  <form id="composer" class="composer advisor-composer">
+    <label class="visually-hidden" for="message">Your message</label>
+    <input id="message" type="text" maxlength="1000" autocomplete="off" placeholder="Type here…">
+    <button type="submit" aria-label="Send">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>
+    </button>
+  </form>
+
+  <template id="email-form-template">
+    <form class="email-form" novalidate>
+      <label>
+        Email
+        <input name="email" type="email" required autocomplete="email" placeholder="name@example.com">
+      </label>
+      <label class="order-option">
+        <input name="wants_order" type="checkbox">
+        I want to order
+      </label>
+      <p class="form-note">Demo: email goes only to approved test addresses.</p>
+      <p class="form-error" role="alert"></p>
+      <button class="button button-primary" type="submit">Send</button>
+    </form>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+  <script type="module" src="js/advisor.js"></script>
+</body>
+</html>
