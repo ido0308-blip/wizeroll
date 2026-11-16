@@ -1,0 +1,56 @@
+{
+  "name": "WIZEROLL fit check email",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "wizeroll-fit-check",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "id": "5f0c1a52-1d7e-4c51-9a4f-7d1d8f2b6a01",
+      "name": "Supabase insert",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0],
+      "webhookId": "wizeroll-fit-check"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Replace with your own test addresses, in lower case. Never commit real addresses to the repo.\nconst TEST_ADDRESSES = ['replace-with-your-test-address@example.com'];\n\nconst VERDICT_LABELS = {\n  fit: 'Fits',\n  fit_with_reservation: 'Fits with a reservation',\n  not_fit: 'Does not fit',\n};\n\nconst body = $input.first().json.body ?? {};\nconst record = body.record ?? {};\nif (body.type !== 'INSERT' || body.table !== 'requests' || record.request_type !== 'fit_check') return [];\n\nconst email = String(record.customer_email ?? '').trim().toLowerCase();\nif (!TEST_ADDRESSES.includes(email)) return [];\n\nconst log = Array.isArray(record.conversation_log) ? record.conversation_log : [];\nconst verdictEntry = [...log].reverse().find((entry) => entry.kind === 'verdict');\nconst verdict = VERDICT_LABELS[record.verdict] ?? 'Your result';\n\nconst text = [\n  'Hi,',\n  '',\n  `Here is your WIZEROLL fit check result: ${verdict}.`,\n  '',\n  String(verdictEntry?.text ?? ''),\n  '',\n  record.wants_order ? 'We noted that you want to order. Your request was passed to the business owner.' : '',\n  '',\n  'WIZEROLL demo. This email was sent to a test address.',\n].join('\\n');\n\nreturn [{ json: { to: email, subject: `WIZEROLL fit check: ${verdict}`, text } }];"
+      },
+      "id": "5f0c1a52-1d7e-4c51-9a4f-7d1d8f2b6a02",
+      "name": "Build email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [260, 0]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "5f0c1a52-1d7e-4c51-9a4f-7d1d8f2b6a03",
+      "name": "Send with Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [520, 0]
+    }
+  ],
+  "connections": {
+    "Supabase insert": {
+      "main": [[{ "node": "Build email", "type": "main", "index": 0 }]]
+    },
+    "Build email": {
+      "main": [[{ "node": "Send with Gmail", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
