@@ -130,6 +130,14 @@ export function decideVerdict(checks) {
   return { verdict: 'fit', verdict_field_key: checks[0].field_key };
 }
 
+// The PRD requires "I don't have this data" for a value the table does not cover.
+// The model sometimes leaves it out, so code adds it.
+export function withNoDataNotice(replyText, decision, checks) {
+  const check = checks.find((candidate) => candidate.field_key === decision.verdict_field_key);
+  if (check?.result !== 'not_covered' || /don't have this data/i.test(replyText)) return replyText;
+  return `${replyText} I don't have this data for "${check.customer_value}".`;
+}
+
 // Used when the model is unavailable, so the customer still gets a correct, reasoned answer.
 export function fallbackReply({ verdict, verdict_field_key: fieldKey }, checks) {
   const check = checks.find((candidate) => candidate.field_key === fieldKey);

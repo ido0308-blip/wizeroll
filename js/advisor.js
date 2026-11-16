@@ -8,6 +8,7 @@ import {
   orderSpecs,
   parseSimpleAnswer,
   saysNoneOfThem,
+  withNoDataNotice,
 } from './fit-check.js';
 import { callAdvisor, takeDraft } from './shared.js';
 import { fetchProductSpecs, saveRequest } from './supabase-client.js';
@@ -281,7 +282,7 @@ async function giveVerdict() {
   const typing = showTyping();
   const checks = buildChecks(specs, values);
   const decision = decideVerdict(checks);
-  const replyText = await phraseVerdict(decision, checks);
+  const replyText = withNoDataNotice(await phraseVerdict(decision, checks), decision, checks);
   typing.remove();
 
   addToConversation('advisor', replyText, 'verdict');

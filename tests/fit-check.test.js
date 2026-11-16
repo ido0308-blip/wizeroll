@@ -2,7 +2,7 @@
 
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildChecks, compareField, decideVerdict, fallbackReply, fillLabel, isPlausible, matchAllowedValue, parseSimpleAnswer, saysNoneOfThem } from '../js/fit-check.js';
+import { buildChecks, compareField, decideVerdict, fallbackReply, fillLabel, isPlausible, matchAllowedValue, parseSimpleAnswer, saysNoneOfThem, withNoDataNotice } from '../js/fit-check.js';
 
 const DESK = { field_key: 'desk_height_cm', value_type: 'numeric_range', min_value: 70, max_value: 95, allowed_values: null, customer_label_template: 'Fits a desk height of {min} to {max} cm [demo value]' };
 const WEIGHT = { field_key: 'customer_weight_kg', value_type: 'numeric_range', min_value: 40, max_value: 130, allowed_values: null, customer_label_template: 'Supports {min} to {max} kg' };
@@ -96,6 +96,15 @@ test('labels fill their placeholders, and checks leave out the demo mark', () =>
   assert.equal(fillLabel(FLOOR), 'Rolls on: tile, low-pile carpet');
   const [desk] = buildChecks(SPECS, { desk_height_cm: 85, customer_weight_kg: 70, floor_type: 'tile' });
   assert.equal(desk.label, 'Fits a desk height of 70 to 95 cm');
+});
+
+test('a value the table does not cover always gets the no-data sentence', () => {
+  const checks = buildChecks(SPECS, { desk_height_cm: 85, customer_weight_kg: 70, floor_type: 'concrete' });
+  const decision = decideVerdict(checks);
+  assert.equal(withNoDataNotice('Fits with a reservation.', decision, checks), 'Fits with a reservation. I don\'t have this data for "concrete".');
+  assert.equal(withNoDataNotice('I don\'t have this data.', decision, checks), 'I don\'t have this data.');
+  const fitChecks = buildChecks(SPECS, { desk_height_cm: 85, customer_weight_kg: 70, floor_type: 'tile' });
+  assert.equal(withNoDataNotice('Fits.', decideVerdict(fitChecks), fitChecks), 'Fits.');
 });
 
 test('the fallback reply states the verdict, the rule and the value', () => {
