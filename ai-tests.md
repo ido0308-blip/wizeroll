@@ -60,6 +60,25 @@ node scripts/run-ai-tests.js
 node scripts/run-ai-tests.js https://wizeroll.vercel.app/api/advise classify
 ```
 
+### תוצאות `classify`
+
+הרצה: 16.11.2026, מול `https://wizeroll.vercel.app/api/advise`.
+
+| מקרה | תוצאה | זמן | פלט |
+|---|---|---|---|
+| C1 | PASS | 12s | sinks, high |
+| C2 | PASS | 9s | caster_rough, high |
+| C3 | PASS | 12s | crack, high |
+| C4 | PASS | 13s | lever, high |
+| C5 | PASS | 5s | torn, high |
+| C6 | PASS | 8s | none, not_identified. Question: Could you describe what you see, hear, or feel when using the stool? |
+| C7 | PASS | 13s | squeak, high |
+| C8 | PASS | 18s | none, not_identified. Question: Are you experiencing any functional or physical issues with the stool, such as problems with the seat, movement, or height adjustment? |
+| C9 | PASS | 22s | none, not_identified. Question: Do you see any physical damage or hear any unusual sounds when using the stool? |
+| C10 | PASS | 7s | backrest, high |
+
+**אחוז הצלחה: 10 מתוך 10 (100%).** הרצה קודמת נעצרה בלי פלט, ולכן הסיבה לא ידועה. בהרצה הזאת כל המקרים עברו.
+
 ### מה הקוד מבטיח בלי קשר למודל
 
 - **`id` לא מוכר:** נחשב `not_identified`, גם אם המודל אמר `high`.
@@ -67,7 +86,7 @@ node scripts/run-ai-tests.js https://wizeroll.vercel.app/api/advise classify
 - **שאלת הבהרה אחת בלבד:** אחרי שאלה אחת, ניחוש `low` מוצג כניחוש, ו-`not_identified` פותח קריאת שירות.
 - **שאלת הבהרה חסרה:** מוצגת שאלה קבועה מהקוד.
 
-## תוצאות
+## תוצאות `extract` ו-`phrase`
 
 הרצה: 16.11.2026, מול `https://wizeroll.vercel.app/api/advise`. הפונקציה מנסה את `gemini-3.8-flash`, ואם הוא עמוס או איטי, עוברת ל-`gemini-3.6-flash` ואז ל-`gemini-3.5-flash-lite`. הטבלה לא מציינת איזה מודל ענה בכל מקרה.
 
