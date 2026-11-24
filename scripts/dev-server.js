@@ -15,6 +15,7 @@ const CONTENT_TYPES = {
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.png': 'image/png',
+  '.svg': 'image/svg+xml',
 };
 
 if (existsSync('.env')) process.loadEnvFile('.env');

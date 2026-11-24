@@ -1,0 +1,272 @@
+{
+  "name": "WIZEROLL daily reminders",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4001",
+      "name": "Every day at 09:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "requests",
+        "returnAll": true,
+        "filterType": "string",
+        "filterString": "=request_type=eq.fit_check&wants_order=is.false&reminder_sent=is.false&verdict=in.(fit,fit_with_reservation)&created_at=lt.{{ $now.minus({ days: 3 }).toUTC().toISO() }}"
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4002",
+      "name": "Fit checks without an order",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Replace with your own addresses, in lower case. Never commit real addresses to the repo.\nconst TEST_ADDRESSES = ['replace-with-your-test-address@example.com'];\nconst OWNER_ADDRESS = 'replace-with-the-owner-test-address@example.com';\nconst SITE = 'https://ido0308-blip.github.io/wizeroll/';\nconst FOOTER = 'WIZEROLL demo. This email was sent to a test address.';\n\nconst VERDICT_LABELS = {\n  fit: 'it fits',\n  fit_with_reservation: 'it fits, with a reservation',\n};\n\n// Rows come from the query: fit checks with a positive verdict, no order and no reminder, older than 3 days.\n// Checked again here, so a wrong filter in the query never sends a reminder twice.\nreturn $input.all()\n  .map((item) => item.json)\n  .filter((row) => row.id\n    && row.request_type === 'fit_check'\n    && row.wants_order === false\n    && row.reminder_sent === false\n    && VERDICT_LABELS[row.verdict]\n    && TEST_ADDRESSES.includes(String(row.customer_email ?? '').trim().toLowerCase()))\n  .map((row) => ({\n    json: {\n      request_id: row.id,\n      to: String(row.customer_email).trim().toLowerCase(),\n      subject: 'Still thinking about the WIZEROLL stool?',\n      text: [\n        'Hi,', '',\n        `A few days ago you checked whether the WIZEROLL stool fits your workstation, and the answer was: ${VERDICT_LABELS[row.verdict]}.`, '',\n        'If you still want it, you can come back to the product page:',\n        SITE, '',\n        'This is a one-time reminder.', '',\n        FOOTER,\n      ].join('\\n'),\n    },\n  }));"
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4003",
+      "name": "Build customer reminders",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4004",
+      "name": "Send customer reminder",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        780,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "requests",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Build customer reminders').item.json.request_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "reminder_sent",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4005",
+      "name": "Mark reminder_sent",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "requests",
+        "returnAll": true,
+        "filterType": "string",
+        "filterString": "=request_type=eq.service&status=eq.pending&escalation_sent=is.false&created_at=lt.{{ $now.minus({ days: 2 }).toUTC().toISO() }}"
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4006",
+      "name": "Service requests pending 2 days",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        260,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Replace with your own addresses, in lower case. Never commit real addresses to the repo.\nconst TEST_ADDRESSES = ['replace-with-your-test-address@example.com'];\nconst OWNER_ADDRESS = 'replace-with-the-owner-test-address@example.com';\nconst SITE = 'https://ido0308-blip.github.io/wizeroll/';\nconst FOOTER = 'WIZEROLL demo. This email was sent to a test address.';\n\n// Rows come from the query: service requests still pending, no alert yet, older than 2 days.\nreturn $input.all()\n  .map((item) => item.json)\n  .filter((row) => row.id\n    && row.request_type === 'service'\n    && row.status === 'pending'\n    && row.escalation_sent === false)\n  .map((row) => {\n    const log = Array.isArray(row.conversation_log) ? row.conversation_log : [];\n    const firstMessage = log.find((entry) => entry.role === 'customer')?.text ?? '';\n    return {\n      json: {\n        request_id: row.id,\n        to: OWNER_ADDRESS,\n        subject: 'WIZEROLL: a service request is waiting for more than 2 days',\n        text: [\n          'A service request has been waiting for your decision for more than two days.', '',\n          `Customer: ${row.customer_email}`,\n          `Opened: ${String(row.created_at ?? '').slice(0, 10)}`,\n          `First message: ${firstMessage}`, '',\n          'Open the dashboard to approve or reject it:',\n          `${SITE}dashboard.html`, '',\n          FOOTER,\n        ].join('\\n'),\n      },\n    };\n  });"
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4007",
+      "name": "Build owner alerts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "text",
+        "message": "={{ $json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4008",
+      "name": "Send owner alert",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        780,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "requests",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Build owner alerts').item.json.request_id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "escalation_sent",
+              "fieldValue": "true"
+            }
+          ]
+        }
+      },
+      "id": "7a1e2c40-3b5d-4e6f-8a9b-0c1d2e3f4009",
+      "name": "Mark escalation_sent",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Every day at 09:00": {
+      "main": [
+        [
+          {
+            "node": "Fit checks without an order",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Service requests pending 2 days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fit checks without an order": {
+      "main": [
+        [
+          {
+            "node": "Build customer reminders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build customer reminders": {
+      "main": [
+        [
+          {
+            "node": "Send customer reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send customer reminder": {
+      "main": [
+        [
+          {
+            "node": "Mark reminder_sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Service requests pending 2 days": {
+      "main": [
+        [
+          {
+            "node": "Build owner alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build owner alerts": {
+      "main": [
+        [
+          {
+            "node": "Send owner alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send owner alert": {
+      "main": [
+        [
+          {
+            "node": "Mark escalation_sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

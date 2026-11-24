@@ -17,10 +17,28 @@
   </header>
 
   <main class="product">
-    <div class="product-image">
-      <img id="product-image" src="images/product.jpg" alt="The WIZEROLL rolling stool">
-      <span class="product-image-placeholder">PRODUCT IMAGE COMING SOON</span>
+    <div class="product-media">
+      <div class="product-image">
+        <img id="product-image" src="images/product.jpg" alt="The WIZEROLL rolling stool">
+        <span class="product-image-placeholder">PRODUCT IMAGE COMING SOON</span>
+      </div>
+      <div id="spin-view" class="spin-view" hidden aria-label="360 degree view of the stool. Drag to turn it."></div>
+      <button id="spin-toggle" class="media-badge spin-toggle" type="button" aria-pressed="false" hidden>
+        <span aria-hidden="true">360°</span>
+        <span class="visually-hidden">Show the 360 degree view</span>
+      </button>
+      <button id="video-open" class="media-pill" type="button" hidden>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4l14 8-14 8z"/></svg>
+        Watch the video
+      </button>
     </div>
+
+    <dialog id="video-dialog" class="video-dialog" aria-label="WIZEROLL brand video">
+      <div class="video-frame" id="video-frame"></div>
+      <form method="dialog">
+        <button class="button button-secondary" type="submit">Close</button>
+      </form>
+    </dialog>
 
     <h1>The professional rolling stool</h1>
     <p class="tagline">Your seating partner for long work days.</p>
@@ -48,6 +66,7 @@
   </form>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-cloudimage-360-view@4.9.5/dist/js-cloudimage-360-view.min.js"></script>
   <script type="module" src="js/product.js"></script>
 </body>
 </html>

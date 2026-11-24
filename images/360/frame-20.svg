@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+<defs>
+<linearGradient id="chrome" x1="0" x2="1" y1="0" y2="0">
+  <stop offset="0" stop-color="#8A8F96"/><stop offset="0.25" stop-color="#F4F6F8"/>
+  <stop offset="0.45" stop-color="#B9BEC4"/><stop offset="0.7" stop-color="#FFFFFF"/>
+  <stop offset="1" stop-color="#7C8188"/>
+</linearGradient>
+<linearGradient id="chrome-leg" x1="0" x2="0" y1="0" y2="1">
+  <stop offset="0" stop-color="#FFFFFF"/><stop offset="0.3" stop-color="#D9DDE1"/>
+  <stop offset="0.55" stop-color="#8E949B"/><stop offset="0.8" stop-color="#E6E9EC"/>
+  <stop offset="1" stop-color="#5B6067"/>
+</linearGradient>
+<linearGradient id="seat-side" x1="0" x2="1" y1="0" y2="0">
+  <stop offset="0" stop-color="#15181C"/><stop offset="0.35" stop-color="#3A4049"/>
+  <stop offset="0.6" stop-color="#262B32"/><stop offset="1" stop-color="#121417"/>
+</linearGradient>
+<radialGradient id="seat-top" cx="0.42" cy="0.35" r="0.75">
+  <stop offset="0" stop-color="#4A515B"/><stop offset="0.6" stop-color="#2A2F36"/>
+  <stop offset="1" stop-color="#1B1E23"/>
+</radialGradient>
+<radialGradient id="floor-shadow" cx="0.5" cy="0.5" r="0.5">
+  <stop offset="0" stop-color="#000000" stop-opacity="0.22"/><stop offset="1" stop-color="#000000" stop-opacity="0"/>
+</radialGradient>
+</defs>
+<rect width="800" height="800" fill="#F3F4F6"/>
+<text x="400" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#FF3D1A" letter-spacing="4">DEMO 360 VIEW</text>
+<text x="400" y="118" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#6B7280">Placeholder frame 20 of 24</text>
+<ellipse cx="400" cy="671" rx="330" ry="110" fill="url(#floor-shadow)"/>
+<g><rect x="462.6" y="531.5" width="17.7" height="22.9" rx="4" fill="#16181B"/><ellipse cx="471.4" cy="561.3" rx="16.6" ry="16.9" fill="#1A1C1F"/><ellipse cx="471.4" cy="561.3" rx="5.8" ry="5.9" fill="#55595F"/><path d="M400 585 Q438.4 516 469.9 517.8 c3.6 2 3.6 9.2 1.6 18.4" fill="none" stroke="#4A4F55" stroke-width="19.1" stroke-linecap="round"/><path d="M400 585 Q438.4 516 469.9 517.8 c3.6 2 3.6 9.2 1.6 18.4" fill="none" stroke="url(#chrome-leg)" stroke-width="16.1" stroke-linecap="round"/><path d="M400 585 Q438.4 516 469.9 517.8" fill="none" stroke="#5E636A" stroke-opacity="0.35" stroke-width="2" transform="translate(0 7.1)"/></g><g><rect x="159" y="566.7" width="19.1" height="24.7" rx="4" fill="#16181B"/><ellipse cx="168.5" cy="599.1" rx="14.5" ry="18.2" fill="#1A1C1F"/><ellipse cx="168.5" cy="599.1" rx="5.1" ry="6.4" fill="#55595F"/><path d="M400 585 Q275.5 534.7 173.6 551.9 c-11.7 2 -11.7 9.9 -5 19.8" fill="none" stroke="#4A4F55" stroke-width="20.4" stroke-linecap="round"/><path d="M400 585 Q275.5 534.7 173.6 551.9 c-11.7 2 -11.7 9.9 -5 19.8" fill="none" stroke="url(#chrome-leg)" stroke-width="17.4" stroke-linecap="round"/><path d="M400 585 Q275.5 534.7 173.6 551.9" fill="none" stroke="#5E636A" stroke-opacity="0.35" stroke-width="2" transform="translate(0 7.7)"/></g><g><rect x="665.3" y="607.9" width="20.7" height="26.9" rx="4" fill="#16181B"/><ellipse cx="675.6" cy="643.3" rx="11.3" ry="19.8" fill="#1A1C1F"/><ellipse cx="675.6" cy="643.3" rx="4" ry="6.9" fill="#55595F"/><path d="M400 585 Q548.3 556.7 669.6 591.8 c14 2 14 10.7 6 21.5" fill="none" stroke="#4A4F55" stroke-width="21.8" stroke-linecap="round"/><path d="M400 585 Q548.3 556.7 669.6 591.8 c14 2 14 10.7 6 21.5" fill="none" stroke="url(#chrome-leg)" stroke-width="18.8" stroke-linecap="round"/><path d="M400 585 Q548.3 556.7 669.6 591.8" fill="none" stroke="#5E636A" stroke-opacity="0.35" stroke-width="2" transform="translate(0 8.4)"/></g>
+
+<rect x="387" y="362" width="26" height="45" fill="url(#chrome)"/><rect x="378" y="400" width="44" height="12" rx="3" fill="#2A2D31"/><rect x="379" y="410" width="42" height="163" fill="url(#chrome)"/>
+<ellipse cx="400" cy="589" rx="56" ry="30" fill="#17191C"/><ellipse cx="400" cy="579" rx="40" ry="16" fill="#2B2F34"/>
+<g><rect x="174" y="664.8" width="23" height="29.8" rx="4" fill="#16181B"/><ellipse cx="185.5" cy="704.6" rx="18.3" ry="21.9" fill="#1A1C1F"/><ellipse cx="185.5" cy="704.6" rx="6.4" ry="7.7" fill="#55595F"/><path d="M400 585 Q284.6 587 190.2 647 c-10.9 2 -10.9 11.9 -4.7 23.8" fill="none" stroke="#4A4F55" stroke-width="23.9" stroke-linecap="round"/><path d="M400 585 Q284.6 587 190.2 647 c-10.9 2 -10.9 11.9 -4.7 23.8" fill="none" stroke="url(#chrome-leg)" stroke-width="20.9" stroke-linecap="round"/><path d="M400 585 Q284.6 587 190.2 647" fill="none" stroke="#5E636A" stroke-opacity="0.35" stroke-width="2" transform="translate(0 9.4)"/></g><g><rect x="486.9" y="690.3" width="24" height="31.1" rx="4" fill="#16181B"/><ellipse cx="498.9" cy="731.9" rx="22.2" ry="22.9" fill="#1A1C1F"/><ellipse cx="498.9" cy="731.9" rx="7.8" ry="8" fill="#55595F"/><path d="M400 585 Q453.2 600.6 496.8 671.6 c5 2 5 12.4 2.2 24.9" fill="none" stroke="#4A4F55" stroke-width="24.8" stroke-linecap="round"/><path d="M400 585 Q453.2 600.6 496.8 671.6 c5 2 5 12.4 2.2 24.9" fill="none" stroke="url(#chrome-leg)" stroke-width="21.8" stroke-linecap="round"/><path d="M400 585 Q453.2 600.6 496.8 671.6" fill="none" stroke="#5E636A" stroke-opacity="0.35" stroke-width="2" transform="translate(0 9.9)"/></g>
+<path d="M412 378 L435.9 414.4 L452.3 436.4" fill="none" stroke="#1A1C20" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M210 300 L210 362 A190 57 0 0 0 590 362 L590 300 Z" fill="url(#seat-side)"/><path d="M212 314 A188 56.4 0 0 0 588 314" fill="none" stroke="#0E1013" stroke-width="2"/><ellipse cx="400" cy="300" rx="190" ry="57" fill="url(#seat-top)"/><ellipse cx="400" cy="300" rx="187" ry="56.1" fill="none" stroke="#101215" stroke-width="2"/>
+</svg>
