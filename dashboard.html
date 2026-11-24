@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Requests | WIZEROLL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;700;900&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+  <header class="dash-header">
+    <h1>WIZEROLL — Requests</h1>
+    <p id="session-bar" class="session-bar" hidden>
+      Signed in: owner <span aria-hidden="true">|</span>
+      <button id="sign-out" class="link-button" type="button">Sign out</button>
+    </p>
+  </header>
+
+  <main>
+    <section id="login-view" class="login" hidden>
+      <form id="login-form" class="login-form" novalidate>
+        <h2>Owner sign in</h2>
+        <label>
+          Email
+          <input name="email" type="email" required autocomplete="username">
+        </label>
+        <label>
+          Password
+          <input name="password" type="password" required autocomplete="current-password">
+        </label>
+        <p class="form-error" role="alert"></p>
+        <button class="button button-primary" type="submit">Sign in</button>
+      </form>
+    </section>
+
+    <div id="board-view" class="board" hidden>
+      <section class="panel" aria-labelledby="list-title">
+        <div class="panel-head">
+          <h2 id="list-title">Requests (newest first)</h2>
+          <button id="refresh" class="link-button" type="button">Refresh</button>
+        </div>
+        <p id="list-message" class="panel-message" role="status"></p>
+        <div class="table-wrap">
+          <table class="requests-table">
+            <thead>
+              <tr><th scope="col">Date</th><th scope="col">Customer</th><th scope="col">Type</th><th scope="col">Status</th></tr>
+            </thead>
+            <tbody id="requests-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="details" class="panel details" aria-labelledby="details-title" aria-live="polite">
+        <h2 id="details-title">Selected request</h2>
+        <p class="panel-message">Choose a request from the list.</p>
+      </section>
+    </div>
+  </main>
+
+  <template id="decision-template">
+    <form class="decision-form" novalidate>
+      <fieldset>
+        <legend>Approve as</legend>
+        <label><input type="radio" name="decision" value="replacement"> Replacement</label>
+        <label><input type="radio" name="decision" value="credit"> Credit</label>
+        <label><input type="radio" name="decision" value="special_quote"> Special quote</label>
+      </fieldset>
+      <label>
+        Note (optional)
+        <textarea name="note" rows="3" maxlength="500"></textarea>
+      </label>
+      <p class="form-error" role="alert"></p>
+      <button class="button button-primary" type="submit" value="approve">Approve</button>
+      <button class="button button-secondary" type="submit" value="reject">Reject</button>
+    </form>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
+  <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
